@@ -1,0 +1,44 @@
+# dependencies
+node_modules/
+bower_components/
+
+# production build
+dist/
+build/
+
+# misc
+.DS_Store
+.env
+.env.* # in case you have .env.development, .env.production etc.
+.vscode/
+*.log
+*.lock
+*.bak
+
+# system
+Thumbs.db
+ehthumbs.db
+
+# coverage / test outputs
+coverage/
+*.lcov
+
+# cache
+.cache/
+.next/
+.nuxt/
+out/
+tmp/
+temp/
+
+# IDEs
+.idea/
+*.sublime-workspace
+*.sublime-project
+
+# Parcel
+.parcel-cache/
+
+# Others
+*.local
+*.swp
