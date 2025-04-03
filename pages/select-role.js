@@ -16,7 +16,7 @@ export default function SelectRole() {
   const [userData, setUserData] = useState({ name: '', email: '' });
 
   const roleDetails = {
-    ADMIN: { label: 'Admin', icon: <FiShield />, description: 'Manage platform settings and users' },
+    admin: { label: 'Admin', icon: <FiShield />, description: 'Manage platform settings and users' },
     MENTOR: { label: 'Mentor', icon: <FiBook />, description: 'Guide and assist students' },
     STUDENT: { label: 'Student', icon: <FiUser />, description: 'Access lectures and assignments' },
     IA: { label: 'Instructional Associate', icon: <FiSettings />, description: 'Monitor and review performance' },
@@ -127,7 +127,7 @@ export default function SelectRole() {
 
 function redirectToDashboard(role) {
   const dashboardRoutes = {
-    ADMIN: '/admin/manage-users',
+    admin: '/admin/manage-users',
     MENTOR: '/mentor/dashboard',
     STUDENT: '/student/slot-booking',
   };

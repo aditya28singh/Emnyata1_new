@@ -125,7 +125,7 @@ export default function PendingApproval() {
 
 function redirectToDashboard(role) {
     const dashboardRoutes = {
-        ADMIN: '/admin/dashboard',
+        admin: '/admin/dashboard',
         MENTOR: '/mentor/dashboard',
         STUDENT: '/student/dashboard',
         IA: '/ia/dashboard',

@@ -21,81 +21,139 @@ export default function AuthPage() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (loading) return;
-
+  
     setLoading(true);
     setMessage(null);
-
-    console.log(formData);
-
+  
     try {
-      const response = await fetch('/api/auth/signin', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData),
-        credentials: 'include',
+      // Step 1: Login via GraphQL - removed token field from query
+      const loginRes = await fetch("https://experience-api.masaischool.com/", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Accept": "application/json"
+        },
+        credentials: "include", // Important for sending/receiving cookies
+        body: JSON.stringify({
+          query: `
+            mutation login($input: LoginInput!) {
+              login(input: $input) { id }
+            }
+          `,
+          variables: {
+            input: {
+              email: formData.email,
+              password: formData.password,
+              rememberMe: false
+            }
+          },
+          operationName: "login"
+        })
       });
-
-      const result = await response.json();
-
-      if (response.ok) {
-        setMessage({
-          type: 'success',
-          text: 'Sign In successful! Redirecting...',
+  
+      const loginResult = await loginRes.json();
+      console.log("Login result:", loginResult);
+  
+      if (loginRes.ok && loginResult.data?.login?.id) {
+        // Step 2: Fetch user details
+        const userRes = await fetch("https://experience-api.masaischool.com/", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Accept": "application/json"
+          },
+          credentials: "include", // The session cookie from login will be sent automatically
+          body: JSON.stringify({
+            query: `
+              query getAuthMe {
+                me {
+                  id
+                  name
+                  username
+                  role
+                  sections_enrolled { id name }
+                }
+              }
+            `,
+            operationName: "getAuthMe"
+          })
         });
-
-        localStorage.setItem('token', result.token);
-        Cookies.set('token', result.token, {
-          expires: 1,
-          path: '/',
-          sameSite: 'strict',
-          secure: process.env.NODE_ENV === 'production',
-        });
-
-        const { status, role, exp } = JwtDecode.jwtDecode(result.token);
-
-        if (Date.now() >= exp * 1000) {
-          setMessage({
-            type: 'error',
-            text: 'Session expired. Please sign in again.',
+  
+        const userResult = await userRes.json();
+        console.log("User result:", userResult);
+        const user = userResult.data?.me;
+  
+        if (user) {
+          // Store user data
+          localStorage.setItem("user", JSON.stringify(user));
+          
+          // Set user_id cookie
+          Cookies.set("user_id", user.id, { 
+            expires: 1, 
+            path: '/',
+            sameSite: 'strict',
+            secure: process.env.NODE_ENV === 'production'
           });
-          localStorage.removeItem('token');
-          window.location.href = '/auth';
-          return;
-        }
-
-        if (status === 'PENDING') {
-          window.location.href = '/pending-approval';
-        } else {
+          
+          // Set a session identifier cookie for the middleware
+          // This allows the middleware to know the user is authenticated
+          Cookies.set("auth_session", "authenticated", { 
+            expires: 1, 
+            path: '/',
+            sameSite: 'strict',
+            secure: process.env.NODE_ENV === 'production'
+          });
+          
+          // Also set the role cookie for middleware - make sure it's lowercase
+          if (user.role) {
+            const normalizedRole = user.role.toLowerCase();
+            Cookies.set("selectedRole", normalizedRole, { 
+              expires: 1, 
+              path: '/',
+              sameSite: 'strict',
+              secure: process.env.NODE_ENV === 'production'
+            });
+            
+            console.log("Setting role cookie:", normalizedRole);
+          }
+  
+          setMessage({ type: "success", text: "Sign In successful! Redirecting..." });
+          console.log("User role:", user.role);
+          
+          // Step 3: Redirect based on role
+          // Convert role to lowercase for consistent comparison
+          const role = user.role?.toLowerCase();
+          
           switch (role) {
-            case 'ADMIN':
-              window.location.href = '/admin/manage-users';
+            case "admin":
+              console.log("Redirecting to admin dashboard");
+              window.location.href = "/admin/manage-users";
               break;
-            case 'MENTOR':
-              window.location.href = '/mentor/schedule';
+            case "mentor":
+              window.location.href = "/mentor/schedule";
               break;
-            case 'STUDENT':
-              window.location.href = '/student/slot-booking';
+            case "student":
+              window.location.href = "/student/slot-booking";
               break;
             default:
-              window.location.href = '/select-role';
+              console.log("No recognized role, redirecting to select-role");
+              window.location.href = "/select-role";
           }
+        } else {
+          throw new Error("Failed to fetch user info.");
         }
       } else {
         setMessage({
-          type: 'error',
-          text: result.error || 'Failed to authenticate.',
+          type: "error",
+          text: loginResult.errors?.[0]?.message || "Invalid credentials or login failed.",
         });
       }
     } catch (error) {
-      console.error('Error:', error);
-      if (error.message && error.message.includes('Failed to fetch')) {
-        setMessage({
-          type: 'error',
-          text: 'CORS error: Unable to connect to the server. Please check your connection or API server.',
-        });
-      } else {
-        setMessage({ type: 'error', text: 'An error occurred. Please try again.' });
-      }
+      console.error("Error:", error);
+      setMessage({
+        type: "error",
+        text: error.message || "An error occurred. Please try again.",
+      });
     } finally {
       setLoading(false);
     }

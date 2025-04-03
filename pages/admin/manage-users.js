@@ -15,7 +15,7 @@ const userActions = [
   { name: "Delete", color: "bg-red-100 text-red-600 hover:bg-red-200" },
 ];
 
-const availableRoles = ["ADMIN", "MENTOR", "STUDENT"];
+const availableRoles = ["admin", "MENTOR", "STUDENT"];
 const availablePermissions = [
   "create_meeting",
   "edit_meeting",

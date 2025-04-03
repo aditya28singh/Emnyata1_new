@@ -1,25 +1,26 @@
 import { NextResponse } from 'next/server';
 
-// Define allowed routes for each role
+// Define allowed routes for each role - make sure casing matches what your API returns
 const roleBasedRoutes = {
-  ADMIN: ['/admin/manage-users', '/admin/meetings', '/admin/settings'],
-  MENTOR: ['/mentor/schedule', '/mentor/manage-slots'],
-  STUDENT: ['/student/slot-booking'],
+  'admin': ['/admin/manage-users', '/admin/meetings', '/admin/settings'],
+  'mentor': ['/mentor/schedule', '/mentor/manage-slots'],
+  'student': ['/student/slot-booking'],
 };
 
 // Define default routes for each role
 const defaultRoutes = {
-  ADMIN: '/admin/manage-users',
-  MENTOR: '/mentor/schedule',
-  STUDENT: '/student/slot-booking'
+  'admin': '/admin/manage-users',
+  'mentor': '/mentor/schedule', 
+  'student': '/student/slot-booking'
 };
 
 export async function middleware(req) {
   const { pathname } = req.nextUrl;
 
-  // Allow access to public routes, static assets, or API routes
+  // Allow access to the auth page and static assets
   if (
     pathname === '/' ||
+    pathname === '/auth' ||
     pathname === '/select-role' ||
     pathname.startsWith('/_next') ||
     pathname.startsWith('/images') ||
@@ -29,77 +30,54 @@ export async function middleware(req) {
     return NextResponse.next();
   }
 
-  // Retrieve the JWT token and selected role from cookies
-  const token = req.cookies.get('token')?.value;
+  // Retrieve the cookie values - checking for auth_session and user_id
+  const authSession = req.cookies.get('auth_session')?.value;
+  const user_id = req.cookies.get('user_id')?.value;
   const selectedRole = req.cookies.get('selectedRole')?.value;
 
-  // If no token exists, redirect to the login page
-  if (!token) {
+  console.log('Middleware check:', { pathname, authSession, user_id, selectedRole });
+
+  // If no authentication, redirect to the login page
+  if (!authSession || !user_id) {
+    console.log('No auth session or user ID, redirecting to login');
     return NextResponse.redirect(new URL('/', req.url));
   }
 
   try {
-    // Fetch user status and roles from the backend
-    const response = await fetch('https://masai-connect-backend-w28f.vercel.app/api/get-user-status', {
-      method: 'GET',
-      headers: {
-        'Authorization': `Bearer ${token}`,
-      },
-    });
+    // If there's a role selected, check if the user is allowed to access the requested path
+    if (selectedRole) {
+      const role = selectedRole.toLowerCase();
+      console.log(`Checking access for role: ${role}`);
+      
+      // Get allowed paths for this role
+      const allowedPaths = roleBasedRoutes[role] || [];
+      
+      // Check if current path is allowed for this role
+      const isAllowed = allowedPaths.some((allowedPath) => 
+        pathname.startsWith(allowedPath)
+      );
 
-    if (!response.ok) {
-      return NextResponse.redirect(new URL('/', req.url));
-    }
-
-    const { status, roles } = await response.json();
-
-    // Handle users with 'PENDING' status
-    if (status === 'PENDING') {
-      if (pathname.startsWith('/pending-approval') || pathname === '/') {
-        return NextResponse.next();
+      // If not allowed, redirect to default route for this role
+      if (!isAllowed) {
+        console.log(`Path not allowed for role. Redirecting to default path.`);
+        return NextResponse.redirect(new URL(defaultRoutes[role] || '/', req.url));
       }
-      return NextResponse.redirect(new URL('/pending-approval', req.url));
-    }
-
-    // Handle role selection and access for ACTIVE users
-    if (status === 'ACTIVE') {
-      if (roles.length > 1) {
-        // Multiple roles: Handle role selection
-        if (!selectedRole) {
-          if (pathname !== '/select-role') {
-            return NextResponse.redirect(new URL('/select-role', req.url));
-          }
-          return NextResponse.next();
-        }
-
-        // Validate access to allowed paths for the selected role
-        const allowedPaths = roleBasedRoutes[selectedRole] || [];
-        const isAllowed = allowedPaths.some((allowedPath) => pathname.startsWith(allowedPath));
-
-        if (!isAllowed) {
-          return NextResponse.redirect(new URL(defaultRoutes[selectedRole] || '/', req.url));
-        }
-
-        return NextResponse.next();
-      } else if (roles.length === 1) {
-        // Single role: Automatically direct the user to their role's dashboard
-        const singleRole = roles[0];
-        const allowedPaths = roleBasedRoutes[singleRole] || [];
-        const isAllowed = allowedPaths.some((allowedPath) => pathname.startsWith(allowedPath));
-
-        if (!isAllowed) {
-          return NextResponse.redirect(new URL(defaultRoutes[singleRole] || '/', req.url));
-        }
-
-        return NextResponse.next();
+      
+      // Path is allowed for this role
+      return NextResponse.next();
+    } 
+    else {
+      // No role selected, redirect to role selection page
+      if (pathname !== '/select-role') {
+        console.log('No role selected, redirecting to role selection');
+        return NextResponse.redirect(new URL('/select-role', req.url));
       }
+      return NextResponse.next();
     }
   } catch (error) {
     console.error('Middleware error:', error);
     return NextResponse.redirect(new URL('/', req.url));
   }
-
-  return NextResponse.next();
 }
 
 export const config = {
