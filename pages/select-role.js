@@ -8,6 +8,7 @@ import {
   FiUsers,
   FiClipboard,
 } from 'react-icons/fi';
+import { jwtDecode } from "jwt-decode";
 
 export default function SelectRole() {
   const router = useRouter();
@@ -27,25 +28,51 @@ export default function SelectRole() {
   useEffect(() => {
     const token = localStorage.getItem('token');
     if (!token) {
-      alert('Session expired. Please log in again.');
+      console.error('No token found');
       router.push('/');
       return;
     }
 
     async function fetchUserData() {
       try {
+        // First validate the token format
+        try {
+          const { exp } = jwtDecode(token);
+          if (Date.now() >= exp * 1000) {
+            throw new Error('Token expired');
+          }
+        } catch (tokenError) {
+          console.error('Token validation error:', tokenError);
+          localStorage.removeItem('token');
+          router.push('/');
+          return;
+        }
+
+        // Make the API call
         const response = await fetch('https://masai-connect-backend-w28f.vercel.app/api/get-user-status', {
           method: 'GET',
-          headers: { Authorization: `Bearer ${token}` },
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          },
+          credentials: 'include'
         });
-        if (!response.ok) throw new Error('Failed to fetch user data');
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.message || 'Failed to fetch user data');
+        }
 
         const data = await response.json();
+        if (!data.name || !data.email || !data.roles) {
+          throw new Error('Invalid user data received');
+        }
+
         setUserData({ name: data.name, email: data.email });
         setRoles(data.roles);
       } catch (error) {
         console.error('Error fetching user data:', error);
-        alert('Error fetching user data. Please log in again.');
+        localStorage.removeItem('token');
         router.push('/');
       }
     }

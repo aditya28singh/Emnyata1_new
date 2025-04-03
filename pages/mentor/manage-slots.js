@@ -149,7 +149,7 @@ function AccordionGroup({ date, slots, onEdit }) {
             {slots.map((slot) => {
               const startTime = formatTime(slot.startTime);
               return (
-                <button
+              <button
                   key={`${slot.id}-${slot.startTime}`}
                   className="relative group transform transition-all duration-300 hover:-translate-y-0.5"
                 >
@@ -161,10 +161,10 @@ function AccordionGroup({ date, slots, onEdit }) {
                   {slot.status === 'Open' && (
                     <div className="absolute -top-0.5 -right-0.5 w-1.5 h-1.5 bg-green-500 rounded-full transition-all duration-300 group-hover:scale-110" />
                   )}
-                </button>
+              </button>
               );
             })}
-          </div>
+            </div>
         </div>
       )}
     </div>
@@ -340,34 +340,34 @@ export default function MentorManageSlots() {
   };
 
   // ----- Fetch Slots from the Backend -----
-  const fetchSlots = async () => {
-    try {
+    const fetchSlots = async () => {
+      try {
       setLoading(true);
-      const token = localStorage.getItem('token');
-      const mentorId = "679c6adcfa0a2f65ce121758";
-      const res = await fetch(`https://masai-connect-backend-w28f.vercel.app/api/slots?mentor=${mentorId}&status=${activeTab}`, {
-        headers: {
-          "Authorization": `Bearer ${token}`
-        }
-      });
-      if (!res.ok) throw new Error("Failed to fetch slots");
-      const data = await res.json();
-      const fetchedSlots = data.map(slot => ({
-        id: slot._id,
-        date: slot.date,
-        time: slot.time,
+        const token = localStorage.getItem('token');
+        const mentorId = "679c6adcfa0a2f65ce121758";
+        const res = await fetch(`https://masai-connect-backend-w28f.vercel.app/api/slots?mentor=${mentorId}&status=${activeTab}`, {
+          headers: {
+            "Authorization": `Bearer ${token}`
+          }
+        });
+        if (!res.ok) throw new Error("Failed to fetch slots");
+        const data = await res.json();
+        const fetchedSlots = data.map(slot => ({
+          id: slot._id,
+          date: slot.date,
+          time: slot.time,
         display: slot.time,
-        startTime: slot.startTime,
-        endTime: slot.endTime,
-        status: slot.status
-      }));
-      setSlots(fetchedSlots);
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setLoading(false);
-    }
-  };
+          startTime: slot.startTime,
+          endTime: slot.endTime,
+          status: slot.status
+        }));
+        setSlots(fetchedSlots);
+      } catch (err) {
+        setError(err.message);
+      } finally {
+        setLoading(false);
+      }
+    };
 
   // ----- Initial Fetch -----
   useEffect(() => {
@@ -650,38 +650,38 @@ export default function MentorManageSlots() {
             )}
 
             {/* Existing slots display */}
-            {loading ? (
-              <div className="flex items-center justify-center h-full">
+          {loading ? (
+            <div className="flex items-center justify-center h-full">
                 <div className="animate-spin rounded-full h-16 w-16 border-4 border-t-pink-500 border-gray-300"></div>
-              </div>
-            ) : error ? (
-              <div className="text-center text-red-500">{error}</div>
-            ) : (
-              <>
-                {/* Tabs */}
+            </div>
+          ) : error ? (
+            <div className="text-center text-red-500">{error}</div>
+          ) : (
+            <>
+              {/* Tabs */}
                 <div className="flex space-x-6 mb-6 border-b border-blue-50 pb-2">
                   {['Open', 'Booked'].map((tab) => (
-                    <button
-                      key={tab}
-                      onClick={() => setActiveTab(tab)}
-                      className={`font-medium pb-2 transition-all ${
-                        activeTab === tab
+                  <button
+                    key={tab}
+                    onClick={() => setActiveTab(tab)}
+                    className={`font-medium pb-2 transition-all ${
+                      activeTab === tab
                           ? 'border-b-2 border-blue-500 text-blue-600'
                           : 'text-gray-400 hover:text-blue-500'
-                      }`}
-                    >
-                      {tab}
-                    </button>
-                  ))}
-                </div>
+                    }`}
+                  >
+                    {tab}
+                  </button>
+                ))}
+              </div>
 
-                {/* Main Slots List: Grouped by Date */}
-                {sortedFilteredDates.length === 0 ? (
+              {/* Main Slots List: Grouped by Date */}
+              {sortedFilteredDates.length === 0 ? (
                   <div className="text-center py-12">
                     <p className="text-gray-600 text-lg">No {activeTab.toLowerCase()} slots found.</p>
                   </div>
                 ) : (
-                  <div className="space-y-4">
+                <div className="space-y-4">
                     {sortedFilteredDates.map((date) => (
                       <AccordionGroup
                         key={date}
@@ -690,11 +690,11 @@ export default function MentorManageSlots() {
                         onEdit={() => {}}
                       />
                     ))}
-                  </div>
+                </div>
                 )}
               </>
             )}
-          </div>
+            </div>
         </main>
       </div>
     </div>

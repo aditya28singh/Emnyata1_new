@@ -636,18 +636,20 @@ export default function StudentSlotBooking() {
   // ----- Get Current Week (if needed) -----
   const currentWeek = getCurrentWeek();
 
-  // Function to handle proceed click
-  const handleProceedClick = () => {
-    if (selectedSessionType.id === 'Mentor Connect') {
-      setBookingStep('selectDoubtType');
-    } else {
-      setBookingStep('selectSlot');
-    }
-  };
+  // // Function to handle proceed click
+  // const handleProceedClick = () => {
+  //   if (selectedSessionType.id === 'Mentor Connect') {
+  //     setBookingStep('selectDoubtType');
+  //   } else {
+  //     setBookingStep('selectSlot');
+  //   }
+  // };
 
   // Function to handle no thanks click
   const handleNoThanks = () => {
     setShowWelcome(false);
+    setActiveTab('Book Session');
+    openBookingModal();
   };
 
   // ----- Handle Session Type Selection -----
@@ -743,16 +745,10 @@ export default function StudentSlotBooking() {
                         className="flex flex-col sm:flex-row gap-4"
                       >
                         <button
-                          onClick={handleProceedClick}
+                          onClick={handleNoThanks}
                           className="flex-1 text-base font-medium bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white py-3 px-6 rounded-lg transition-colors"
                         >
                           Let's Begin!
-                        </button>
-                        <button
-                          onClick={handleNoThanks}
-                          className="flex-1 text-base font-medium border-2 border-gray-300 hover:bg-gray-100 py-3 px-6 rounded-lg transition-colors"
-                        >
-                          Maybe Later
                         </button>
                       </motion.div>
                     </div>
